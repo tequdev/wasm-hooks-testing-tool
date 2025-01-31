@@ -317,6 +317,12 @@ export function state_foreign_set(
   if (stateValue === undefined) {
     // Delete operation
     delete hookState[account][namespace][stateKey]
+    if (Object.keys(hookState[account][namespace]).length === 0) {
+      delete hookState[account][namespace]
+    }
+    if (Object.keys(hookState[account]).length === 0) {
+      delete hookState[account]
+    }
     return BigInt(0)
   } else {
     // Set operation

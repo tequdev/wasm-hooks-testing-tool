@@ -142,7 +142,7 @@ describe('state', () => {
         const accHex = decodeAccountID(ctx.hookAccount).toString('hex')
         const nsHex = Buffer.from(ctx.hookNamespace, 'hex').toString('hex')
         const hexKey = Buffer.from(key.value).toString('hex').padStart(64, '0')
-        expect(ctx.hookState[accHex][nsHex][hexKey]).toBeUndefined()
+        expect(ctx.hookState[accHex]).toBeUndefined()
       })
     })
     describe.todo('check reserve exhaustion', () => {})
