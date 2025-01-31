@@ -18,10 +18,7 @@ import {
 import { createHookAAPIStub } from './context/stub'
 
 const validateHexString = (str: string) => {
-  if (/^[0-9A-F]+$/.test(str)) return true
-  if (/^[0-9a-fA-F]+$/.test(str)) {
-    throw new Error('Invalid hex string: lowercase')
-  }
+  if (/^[0-9a-fA-F]+$/.test(str)) return true
   throw new Error('Invalid hex string')
 }
 
@@ -212,16 +209,16 @@ export class TestClient {
       throw new Error('setHookNamespace: Invalid namespace length')
     }
     validateHexString(namespace)
-    this.ctx.hookNamespace = namespace
+    this.ctx.hookNamespace = namespace.toUpperCase()
   }
 
   public setHookParam(param: HookParameter[]) {
     const params: HookParams = {}
     for (const p of param) {
-      validateHexString(p.HookParameter.HookParameterName)
-      validateHexString(p.HookParameter.HookParameterValue)
-      params[p.HookParameter.HookParameterName] =
-        p.HookParameter.HookParameterValue
+      const { HookParameterName, HookParameterValue } = p.HookParameter
+      validateHexString(HookParameterName)
+      validateHexString(HookParameterValue)
+      params[HookParameterName.toUpperCase()] = HookParameterValue.toUpperCase()
     }
     this.ctx.hookParams = params
   }
@@ -234,8 +231,12 @@ export class TestClient {
   ) {
     const accountId = decodeAccountID(
       raddress ? raddress : this.ctx.hookAccount,
-    ).toString('hex')
-    const namespaceId = hexNamespace ? hexNamespace : this.ctx.hookNamespace
+    )
+      .toString('hex')
+      .toUpperCase()
+    const namespaceId = (
+      hexNamespace ? hexNamespace : this.ctx.hookNamespace
+    ).toUpperCase()
 
     validateHexString(namespaceId)
     validateHexString(hexKey)
