@@ -1,6 +1,6 @@
 import { convertStringToHex, encode } from '@transia/xrpl'
 import type { Context } from '../../../src/context/interface'
-import { SlotMap } from '../../../src/testContext'
+import { SlotMap } from '../../../src/testClient'
 import { ExitType } from './../../../src/context/interface'
 
 const isHex = (value: string) => {
@@ -74,7 +74,7 @@ export const defaultContext = (memory: Uint8Array): Context => {
     hookResult: {
       exitType: ExitType.UNSET,
       exitCode: 0n,
-      hookHash: '',
+      exitReason: 'success',
     },
     burden: null,
     generation: 0n,
@@ -97,7 +97,6 @@ export const defaultContext = (memory: Uint8Array): Context => {
     hookNamespace: '00'.repeat(32),
     hookState: {},
     hookParams: {},
-    exitReason: 'success',
     emittedTxn: [],
     slot: new SlotMap(),
     hookSkips: new Set(),

@@ -18,8 +18,8 @@ export const accept: APITestWrapper<ControlAPI['accept']> = (
   ctx.hookResult = {
     exitType: ExitType.ACCEPT,
     exitCode: error_code,
+    exitReason: str,
   }
-  ctx.exitReason = str
   return 1n
 }
 
@@ -32,9 +32,9 @@ export const rollback: APITestWrapper<ControlAPI['rollback']> = (
   const decoder = new TextDecoder()
   const str = decoder.decode(ctx.memory.get(read_ptr, read_len))
   ctx.hookResult = {
-    exitType: ExitType.ACCEPT,
+    exitType: ExitType.ROLLBACK,
     exitCode: error_code,
+    exitReason: str,
   }
-  ctx.exitReason = str
   return 1n
 }

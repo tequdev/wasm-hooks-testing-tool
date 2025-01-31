@@ -405,6 +405,14 @@ describe('slot', () => {
         1,
       )
       kl_sk.set(memory)
+      ctx.otxnTxn = encode({
+        TransactionType: 'Payment',
+        Account: 'rGL6EbjBrCGYzK4vxsqdjYmNPyC6R8yWTk',
+        Amount: '1000000',
+        Destination: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+        Fee: '1000000',
+        Flags: 0,
+      })
       ctx.ledgerData[
         kl_sk.value.slice(2, kl_sk.value.length).toString('hex').toUpperCase()
       ] = encode({

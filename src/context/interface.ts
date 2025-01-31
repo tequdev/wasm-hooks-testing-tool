@@ -61,11 +61,25 @@ export enum ExitType {
 export type HookResult = {
   exitType: ExitType
   exitCode: bigint
+  exitReason: ExitReason
 }
 
 export type HookGrantedBy = Record<string, string[]> // accountid -> hookhash[]
 
-export type HookState = Record<string, Record<string, Record<string, string>>>
+export type HookState = Record<
+  // accountid
+  string,
+  Record<
+    // namespace
+    string,
+    Record<
+      // key
+      string,
+      // value
+      string
+    >
+  >
+>
 
 export type HookParams = Record<string, string>
 
@@ -126,7 +140,6 @@ export type Context = {
   hookNamespace: string
   hookState: HookState
   hookParams: HookParams
-  exitReason: ExitReason
   emittedTxn: EmittedTxn[]
   // ledger_data
   ledgerData: Record<string, string> // index(32 byte)-> blob

@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import {
   type Transaction,
+  decode,
   decodeAccountID,
   encode,
   validate,
@@ -15,6 +16,14 @@ import {
   type SlotEntry,
 } from './context/interface'
 import { createHookAAPIStub } from './context/stub'
+
+const validateHexString = (str: string) => {
+  if (/^[0-9A-F]+$/.test(str)) return true
+  if (/^[0-9a-fA-F]+$/.test(str)) {
+    throw new Error('Invalid hex string: lowercase')
+  }
+  throw new Error('Invalid hex string')
+}
 
 const convertToMemoryExportedWasm = async (wasmBuffer: Buffer) => {
   const wabtModule = await wabt()
@@ -74,7 +83,7 @@ export class SlotMap {
   }
 }
 
-export class TestContext {
+export class TestClient {
   private instance: WebAssembly.Instance | null = null
   private module: WebAssembly.Module | null = null
   private imports: WebAssembly.Imports | null = null
@@ -108,6 +117,7 @@ export class TestContext {
     hookResult: {
       exitType: ExitType.UNSET,
       exitCode: 0n,
+      exitReason: '',
     },
     burden: 0n,
     generation: 0n,
@@ -115,7 +125,6 @@ export class TestContext {
     hookNamespace: '',
     hookState: {},
     hookParams: {},
-    exitReason: '',
     emittedTxn: [],
     slot: new SlotMap(),
 
@@ -142,12 +151,23 @@ export class TestContext {
     this.imports = imports
   }
 
-  static async deploy(wasmPath: string): Promise<TestContext> {
+  static async deploy(
+    wasmPath: string,
+    {
+      hookAccount,
+      hookNamespace,
+      hookParam = [],
+    }: {
+      hookAccount: string
+      hookNamespace: string
+      hookParam?: HookParameter[]
+    },
+  ): Promise<TestClient> {
     const wasmBuffer = await convertToMemoryExportedWasm(
       fs.readFileSync(wasmPath),
     )
 
-    const context = new TestContext(null, null, null)
+    const context = new TestClient(null, null, null)
     const imports: WebAssembly.Imports = {
       env: {
         ...createHookAAPIStub(context.ctx),
@@ -158,6 +178,9 @@ export class TestContext {
     context.module = instanceSource.module
     context.imports = imports
     context.ctx.hookHash = sha512Half(wasmBuffer.toString('hex'))
+    context.setHookAccount(hookAccount)
+    context.setHookNamespace(hookNamespace)
+    context.setHookParam(hookParam)
     return context
   }
 
@@ -179,18 +202,65 @@ export class TestContext {
     try {
       decodeAccountID(raddress)
     } catch (e) {
-      throw new Error('setHookAccount: Invalid account ID')
+      throw new Error('setHookAccount: Invalid account address')
     }
     this.ctx.hookAccount = raddress
+  }
+
+  public setHookNamespace(namespace: string) {
+    if (namespace.length !== 64) {
+      throw new Error('setHookNamespace: Invalid namespace length')
+    }
+    validateHexString(namespace)
+    this.ctx.hookNamespace = namespace
   }
 
   public setHookParam(param: HookParameter[]) {
     const params: HookParams = {}
     for (const p of param) {
+      validateHexString(p.HookParameter.HookParameterName)
+      validateHexString(p.HookParameter.HookParameterValue)
       params[p.HookParameter.HookParameterName] =
         p.HookParameter.HookParameterValue
     }
     this.ctx.hookParams = params
+  }
+
+  public setHookState(
+    hexKey: string,
+    hexvalue: string,
+    hexNamespace?: string,
+    raddress?: string,
+  ) {
+    const accountId = decodeAccountID(
+      raddress ? raddress : this.ctx.hookAccount,
+    ).toString('hex')
+    const namespaceId = hexNamespace ? hexNamespace : this.ctx.hookNamespace
+
+    validateHexString(namespaceId)
+    validateHexString(hexKey)
+    validateHexString(hexvalue)
+    if (!this.ctx.hookState[accountId]) this.ctx.hookState[accountId] = {}
+    if (!this.ctx.hookState[accountId][namespaceId])
+      this.ctx.hookState[accountId][namespaceId] = {}
+    this.ctx.hookState[accountId][namespaceId][hexKey] = hexvalue
+  }
+
+  public getHookStates() {
+    return this.ctx.hookState
+  }
+
+  public getHookResult() {
+    return this.ctx.hookResult
+  }
+
+  public getEmittedTxn<T extends boolean = true>(
+    as_json?: T,
+  ): T extends false ? string[] : Transaction[] {
+    if (as_json === false) return this.ctx.emittedTxn as any
+    return this.ctx.emittedTxn.map(
+      (txn) => decode(txn) as unknown as Transaction,
+    ) as any
   }
 
   public hook() {
@@ -200,7 +270,7 @@ export class TestContext {
     }
     hookFn()
     const { exitType, exitCode } = this.ctx.hookResult
-    const reason = this.ctx.exitReason
+    const reason = this.ctx.hookResult.exitReason
     if (exitType === ExitType.ACCEPT) {
       console.log('accept', reason)
     } else if (exitType === ExitType.ROLLBACK) {
@@ -216,7 +286,7 @@ export class TestContext {
     }
     cbakFn()
     const { exitType, exitCode } = this.ctx.hookResult
-    const reason = this.ctx.exitReason
+    const reason = this.ctx.hookResult.exitReason
     if (exitType === ExitType.ACCEPT) {
       console.log('accept', reason)
     } else if (exitType === ExitType.ROLLBACK) {

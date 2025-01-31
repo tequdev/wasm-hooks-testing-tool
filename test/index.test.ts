@@ -1,10 +1,13 @@
 import { convertStringToHex } from '@transia/xrpl'
-import { TestContext } from '../src/testContext'
+import { TestClient } from '../src/testClient'
 
 it('test', async () => {
-  const ctx = await TestContext.deploy('./test/index.wasm')
-  ctx.setHookAccount('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh')
-  ctx.setHookParam([
+  const client = await TestClient.deploy('./test/index.wasm', {
+    hookAccount: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+    hookNamespace: '00'.repeat(32),
+  })
+  client.setHookState(convertStringToHex('key'), convertStringToHex('value'))
+  client.setHookParam([
     {
       HookParameter: {
         HookParameterName: convertStringToHex('NAME'),
@@ -12,7 +15,7 @@ it('test', async () => {
       },
     },
   ])
-  ctx.setTransaction({
+  client.setTransaction({
     TransactionType: 'Payment',
     Account: 'rGL6EbjBrCGYzK4vxsqdjYmNPyC6R8yWTk',
     Amount: '1000000',
@@ -20,5 +23,8 @@ it('test', async () => {
     Fee: '1000000',
     Flags: 0,
   })
-  expect(ctx.hook()).not.toBeUndefined()
+  expect(client.hook()).not.toBeUndefined()
+  const result = client.getHookResult()
+  const states = client.getHookStates()
+  const emittedTxn = client.getEmittedTxn()
 })
