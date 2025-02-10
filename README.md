@@ -33,3 +33,10 @@ const result = client.getHookResult()
 const states = client.getHookStates()
 const emittedTxn = client.getEmittedTxn()
 ```
+
+## Publish
+
+```sh
+pnpm build
+pnpm publish
+```
