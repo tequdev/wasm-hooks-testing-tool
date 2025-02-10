@@ -61,7 +61,7 @@ const slotEntryToFinalBuffer = (slotEntry: SlotEntry): Buffer => {
     slotEntry.type === SerializedTypeID.STI_ARRAY ||
     slotEntry.type === SerializedTypeID.STI_OBJECT
   ) {
-    finalBuffer = finalBuffer.slice(0, finalBuffer.length - 1)
+    finalBuffer = finalBuffer.subarray(0, finalBuffer.length - 1)
   }
   return finalBuffer
 }

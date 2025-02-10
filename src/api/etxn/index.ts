@@ -327,7 +327,7 @@ export const emit: APITestWrapper<EtxnAPI['emit']> = (
     !emitDetails.EmitGeneration ||
     !emitDetails.EmitBurden ||
     !emitDetails.EmitParentTxnID ||
-    !emitDetails.EmitNonce ||
+    !(emitDetails as any).EmitNonce ||
     !emitDetails.EmitHookHash
   ) {
     console.warn('HookEmit', 'sfEmitDetails malformed.')
@@ -341,11 +341,11 @@ export const emit: APITestWrapper<EtxnAPI['emit']> = (
   const gen = emitDetails.EmitGeneration
   const bur = emitDetails.EmitBurden
   const pTxnID = emitDetails.EmitParentTxnID
-  const nonce = emitDetails.EmitNonce
+  const nonce = (emitDetails as any).EmitNonce
 
   let callback: string
-  if (emitDetails.EmitCallback) {
-    callback = emitDetails.EmitCallback
+  if ((emitDetails as any).EmitCallback) {
+    callback = (emitDetails as any).EmitCallback
   }
   const hash = emitDetails.EmitHookHash
 
